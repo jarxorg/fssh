@@ -28,6 +28,10 @@ func (c *cp) Name() string {
 	return "cp"
 }
 
+func (c *cp) Description() string {
+	return "copy files"
+}
+
 func (c *cp) FlagSet() *flag.FlagSet {
 	if c.flagSet == nil {
 		s := flag.NewFlagSet(c.Name(), flag.ContinueOnError)

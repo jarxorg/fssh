@@ -13,6 +13,7 @@ import (
 
 type Command interface {
 	Name() string
+	Description() string
 	FlagSet() *flag.FlagSet
 	Exec(sh *Shell) error
 	Usage(w io.Writer)

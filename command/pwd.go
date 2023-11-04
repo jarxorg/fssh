@@ -21,6 +21,10 @@ func (c *pwd) Name() string {
 	return "pwd"
 }
 
+func (c *pwd) Description() string {
+	return "print working directory name"
+}
+
 func (c *pwd) FlagSet() *flag.FlagSet {
 	if c.flagSet == nil {
 		s := flag.NewFlagSet(c.Name(), flag.ContinueOnError)

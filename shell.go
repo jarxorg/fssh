@@ -50,7 +50,7 @@ func Main(osArgs []string) error {
 }
 
 type Shell struct {
-	l *readline.Instance
+	rl *readline.Instance
 
 	Stdout        io.Writer
 	Stderr        io.Writer
@@ -95,7 +95,7 @@ func New(name string) (*Shell, error) {
 		Dir:           dir,
 		PrefixMatcher: &GlobPrefixMatcher{},
 	}
-	l, err := readline.NewEx(&readline.Config{
+	rl, err := readline.NewEx(&readline.Config{
 		Prompt:            "\033[36m>\033[0m ",
 		HistoryFile:       filepath.Join(homeDir, fmt.Sprintf(".%s_history", ShellName)),
 		AutoComplete:      newReadlineAutoCompleter(sh),
@@ -106,9 +106,9 @@ func New(name string) (*Shell, error) {
 	if err != nil {
 		return nil, err
 	}
-	sh.l = l
-	sh.Stdout = l.Stdout()
-	sh.Stderr = l.Stderr()
+	sh.rl = rl
+	sh.Stdout = rl.Stdout()
+	sh.Stderr = rl.Stderr()
 	sh.UpdatePrompt()
 	return sh, nil
 }
@@ -119,18 +119,18 @@ func (sh *Shell) DirWithProtocol() string {
 
 func (sh *Shell) UpdatePrompt() {
 	sh.PrefixMatcher.Reset()
-	sh.l.SetPrompt("\033[36m" + sh.DirWithProtocol() + ">\033[0m ")
+	sh.rl.SetPrompt("\033[36m" + sh.DirWithProtocol() + ">\033[0m ")
 }
 
 func (sh *Shell) Close() error {
-	return sh.l.Close()
+	return sh.rl.Close()
 }
 
 func (sh *Shell) Run() error {
-	sh.l.CaptureExitSignal()
+	sh.rl.CaptureExitSignal()
 	log.SetOutput(sh.Stderr)
 	for {
-		line, err := sh.l.Readline()
+		line, err := sh.rl.Readline()
 		if err == readline.ErrInterrupt {
 			if len(line) == 0 {
 				break

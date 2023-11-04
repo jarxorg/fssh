@@ -22,6 +22,10 @@ func (c *ls) Name() string {
 	return "ls"
 }
 
+func (c *ls) Description() string {
+	return "list directory contents"
+}
+
 func (c *ls) FlagSet() *flag.FlagSet {
 	if c.flagSet == nil {
 		s := flag.NewFlagSet(c.Name(), flag.ContinueOnError)

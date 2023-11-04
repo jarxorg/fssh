@@ -22,6 +22,10 @@ func (c *cat) Name() string {
 	return "cat"
 }
 
+func (c *cat) Description() string {
+	return "concatenate and print files"
+}
+
 func (c *cat) FlagSet() *flag.FlagSet {
 	if c.flagSet == nil {
 		s := flag.NewFlagSet(c.Name(), flag.ContinueOnError)

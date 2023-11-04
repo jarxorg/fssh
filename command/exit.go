@@ -20,6 +20,10 @@ func (c *exit) Name() string {
 	return "exit"
 }
 
+func (c *exit) Description() string {
+	return "exit " + fssh.ShellName
+}
+
 func (c *exit) FlagSet() *flag.FlagSet {
 	if c.flagSet == nil {
 		s := flag.NewFlagSet("exit", flag.ContinueOnError)

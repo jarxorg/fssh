@@ -20,6 +20,10 @@ func (c *help) Name() string {
 	return "help"
 }
 
+func (c *help) Description() string {
+	return "show help messages"
+}
+
 func (c *help) FlagSet() *flag.FlagSet {
 	if c.flagSet == nil {
 		s := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
@@ -51,7 +55,8 @@ func (c *help) Usage(w io.Writer) {
 	fmt.Fprintln(w, "Commands:")
 	for _, name := range fssh.SortedCommandNames() {
 		if name != helpName {
-			fmt.Fprintf(w, "  %s\n", name)
+			cmd := fssh.AquireCommand(name)
+			fmt.Fprintf(w, "  %s\t\t%s\n", name, cmd.Description())
 		}
 	}
 }

@@ -22,6 +22,10 @@ func (c *env) Name() string {
 	return "env"
 }
 
+func (c *env) Description() string {
+	return "prints or sets environment"
+}
+
 func (c *env) FlagSet() *flag.FlagSet {
 	if c.flagSet == nil {
 		s := flag.NewFlagSet(c.Name(), flag.ContinueOnError)

@@ -25,6 +25,10 @@ func (c *rm) Name() string {
 	return "rm"
 }
 
+func (c *rm) Description() string {
+	return "remove files"
+}
+
 func (c *rm) FlagSet() *flag.FlagSet {
 	if c.flagSet == nil {
 		s := flag.NewFlagSet(c.Name(), flag.ContinueOnError)

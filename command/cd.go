@@ -22,6 +22,10 @@ func (c *cd) Name() string {
 	return "cd"
 }
 
+func (c *cd) Description() string {
+	return "change directory"
+}
+
 func (c *cd) FlagSet() *flag.FlagSet {
 	if c.flagSet == nil {
 		s := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
