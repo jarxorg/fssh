@@ -88,7 +88,7 @@ func (c *ls) printInfo(sh *fssh.Shell, info fs.FileInfo) {
 
 }
 
-func (c *ls) AutoCompleter() fssh.AutoCompleter {
+func (c *ls) AutoCompleter() fssh.AutoCompleterFunc {
 	return c.autoComplete
 }
 

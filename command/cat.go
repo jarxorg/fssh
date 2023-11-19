@@ -56,7 +56,7 @@ func (c *cat) Exec(sh *fssh.Shell) error {
 	return nil
 }
 
-func (c *cat) AutoCompleter() fssh.AutoCompleter {
+func (c *cat) AutoCompleter() fssh.AutoCompleterFunc {
 	return c.autoComplete
 }
 

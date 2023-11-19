@@ -51,13 +51,6 @@ func (c *cd) Exec(sh *fssh.Shell) error {
 		if err != nil {
 			return err
 		}
-		info, err := fs.Stat(fsys, subDir)
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			return fmt.Errorf("not directory: %s", dir)
-		}
 		sh.FS = fsys
 		sh.Protocol = protocol
 		sh.Host = baseDir
@@ -78,7 +71,7 @@ func (c *cd) Exec(sh *fssh.Shell) error {
 	return nil
 }
 
-func (c *cd) AutoCompleter() fssh.AutoCompleter {
+func (c *cd) AutoCompleter() fssh.AutoCompleterFunc {
 	return c.autoComplete
 }
 

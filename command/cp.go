@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/jarxorg/fssh"
-	"github.com/jarxorg/wfs"
 )
 
 type cp struct {
@@ -75,7 +74,7 @@ func (c *cp) Exec(sh *fssh.Shell) error {
 	return c.copyFile(sh, fromFS, toFS, fromName, toName)
 }
 
-func (c *cp) copyDir(sh *fssh.Shell, fromFS, toFS wfs.WriteFileFS, fromName, toName string) error {
+func (c *cp) copyDir(sh *fssh.Shell, fromFS, toFS fssh.FS, fromName, toName string) error {
 	if !c.isRecursive {
 		if c.isForce {
 			return nil
@@ -112,7 +111,7 @@ func (c *cp) copyDir(sh *fssh.Shell, fromFS, toFS wfs.WriteFileFS, fromName, toN
 	})
 }
 
-func (c *cp) copyFile(sh *fssh.Shell, fromFS, toFS wfs.WriteFileFS, fromName, toName string) error {
+func (c *cp) copyFile(sh *fssh.Shell, fromFS, toFS fssh.FS, fromName, toName string) error {
 	fromInfo, err := fs.Stat(fromFS, fromName)
 	if err != nil {
 		return err
@@ -153,7 +152,7 @@ func (c *cp) copyFile(sh *fssh.Shell, fromFS, toFS wfs.WriteFileFS, fromName, to
 	return nil
 }
 
-func (c *cp) AutoCompleter() fssh.AutoCompleter {
+func (c *cp) AutoCompleter() fssh.AutoCompleterFunc {
 	return c.autoComplete
 }
 

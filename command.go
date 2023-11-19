@@ -11,19 +11,29 @@ import (
 	"github.com/chzyer/readline"
 )
 
+// Command is an interface that defines a shell command.
 type Command interface {
+	// Name returns the name of a command.
 	Name() string
+	// Description returns the description of a command.
 	Description() string
+	// FlagSet returns the flagSet of a command.
 	FlagSet() *flag.FlagSet
+	// Exec executes a command.
 	Exec(sh *Shell) error
+	// Usage writes help usage.
 	Usage(w io.Writer)
-	AutoCompleter() AutoCompleter
+	// AutoCompleter returns a AutoCompleter if the command supports auto completion.
+	AutoCompleter() AutoCompleterFunc
+	// Reset resets the command status. This is called after Exec.
 	Reset()
 }
 
+// NewCommandFunc represents a function to create a new command.
 type NewCommandFunc func() Command
 
-type AutoCompleter func(sh *Shell, arg string) ([]string, error)
+// AutoCompleterFunc represent a function for auto completion.
+type AutoCompleterFunc func(sh *Shell, arg string) ([]string, error)
 
 var (
 	commandPools       = map[string]*sync.Pool{}
@@ -31,6 +41,7 @@ var (
 	commandNamesSorted bool
 )
 
+// RegisterNewCommandFunc registers a specified NewCommandFunc.
 func RegisterNewCommandFunc(fn NewCommandFunc) {
 	cmd := fn()
 	commandPools[cmd.Name()] = &sync.Pool{
@@ -40,6 +51,7 @@ func RegisterNewCommandFunc(fn NewCommandFunc) {
 	commandNamesSorted = false
 }
 
+// AquireCommand returns an Command instance from command pool.
 func AquireCommand(name string) Command {
 	if pool, ok := commandPools[name]; ok {
 		return pool.Get().(Command)
@@ -47,6 +59,7 @@ func AquireCommand(name string) Command {
 	return nil
 }
 
+// ReleaseCommand releases a acquired Command via AquireCommand to command pool.
 func ReleaseCommand(cmd Command) {
 	if pool, ok := commandPools[cmd.Name()]; ok {
 		cmd.Reset()
@@ -54,6 +67,7 @@ func ReleaseCommand(cmd Command) {
 	}
 }
 
+// SortedCommandNames returns sorted command names from registered commands.
 func SortedCommandNames() []string {
 	if !commandNamesSorted {
 		sort.Strings(commandNames)
@@ -101,7 +115,7 @@ func newReadlinePrefixCompleter(sh *Shell, name string) readline.PrefixCompleter
 		if len(fargs) > 0 {
 			prefix = strings.TrimSpace(strings.TrimSuffix(prefix, lastFarg))
 		}
-		return WithPrefixes(matches, prefix, " ")
+		return WithPrefixes(matches, prefix+" ")
 	}))
 	return pc
 }

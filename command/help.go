@@ -61,7 +61,7 @@ func (c *help) Usage(w io.Writer) {
 	}
 }
 
-func (c *help) AutoCompleter() fssh.AutoCompleter {
+func (c *help) AutoCompleter() fssh.AutoCompleterFunc {
 	return nil
 }
 

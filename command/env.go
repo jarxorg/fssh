@@ -67,7 +67,7 @@ func (c *env) Exec(sh *fssh.Shell) error {
 	return nil
 }
 
-func (c *env) AutoCompleter() fssh.AutoCompleter {
+func (c *env) AutoCompleter() fssh.AutoCompleterFunc {
 	return nil
 }
 

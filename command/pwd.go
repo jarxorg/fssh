@@ -50,7 +50,7 @@ func (c *pwd) Exec(sh *fssh.Shell) error {
 	return nil
 }
 
-func (c *pwd) AutoCompleter() fssh.AutoCompleter {
+func (c *pwd) AutoCompleter() fssh.AutoCompleterFunc {
 	return nil
 }
 

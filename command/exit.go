@@ -40,7 +40,7 @@ func (c *exit) Exec(sh *fssh.Shell) error {
 	return fssh.ErrExit
 }
 
-func (c *exit) AutoCompleter() fssh.AutoCompleter {
+func (c *exit) AutoCompleter() fssh.AutoCompleterFunc {
 	return nil
 }
 

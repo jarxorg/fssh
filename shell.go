@@ -11,44 +11,16 @@ import (
 	"path/filepath"
 
 	"github.com/chzyer/readline"
-	"github.com/jarxorg/gcsfs"
-	"github.com/jarxorg/s3fs"
 	"github.com/jarxorg/wfs"
-	"github.com/jarxorg/wfs/memfs"
-	"github.com/jarxorg/wfs/osfs"
 )
 
+// ShellName is "fssh".
 const ShellName = "fssh"
 
+// ErrExit represents an exit error. If this error is detected then the shell will terminate.
 var ErrExit = errors.New("exit")
 
-func Main(osArgs []string) error {
-	flagSet := flag.NewFlagSet(ShellName, flag.ExitOnError)
-	flagSet.Usage = func() {
-		fmt.Printf("Usage:\n  %s ([dir])\n", ShellName)
-		fmt.Println("Examples:")
-		fmt.Printf("  %s\n", ShellName)
-		fmt.Printf("  %s DIR\n", ShellName)
-		fmt.Printf("  %s (s3|gs)://BUCKET/\n", ShellName)
-	}
-	if err := flagSet.Parse(osArgs[1:]); err != nil {
-		return err
-	}
-
-	args := flagSet.Args()
-	dir := "."
-	if len(args) > 0 {
-		dir = args[0]
-	}
-	sh, err := New(dir)
-	if err != nil {
-		return err
-	}
-	defer sh.Close()
-
-	return sh.Run()
-}
-
+// Shell reads stdin, interprets lines, and executes commands.
 type Shell struct {
 	rl *readline.Instance
 
@@ -61,30 +33,14 @@ type Shell struct {
 	PrefixMatcher PrefixMatcher
 }
 
-func NewFS(name string) (wfs.WriteFileFS, string, string, string, error) {
-	protocol, host, dir, err := parseDir(name)
-	if err != nil {
-		return nil, "", "", "", err
-	}
-	switch protocol {
-	case "s3://":
-		return s3fs.New(host), protocol, host, dir, nil
-	case "gs://":
-		return gcsfs.New(host), protocol, host, dir, nil
-	case "mem://":
-		return memfs.New(), protocol, host, dir, nil
-	default:
-		return osfs.New(host), protocol, host, dir, nil
-	}
-}
-
-func New(name string) (*Shell, error) {
+// NewShell creates a new Shell.
+func NewShell(dirUrl string) (*Shell, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
 
-	fsys, protocol, host, dir, err := NewFS(name)
+	fsys, protocol, host, dir, err := NewFS(dirUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +52,6 @@ func New(name string) (*Shell, error) {
 		PrefixMatcher: &GlobPrefixMatcher{},
 	}
 	rl, err := readline.NewEx(&readline.Config{
-		Prompt:            "\033[36m>\033[0m ",
 		HistoryFile:       filepath.Join(homeDir, fmt.Sprintf(".%s_history", ShellName)),
 		AutoComplete:      newReadlineAutoCompleter(sh),
 		InterruptPrompt:   "^C",
@@ -113,19 +68,23 @@ func New(name string) (*Shell, error) {
 	return sh, nil
 }
 
+// DirWithProtocol returns the current directory held by the shell.
 func (sh *Shell) DirWithProtocol() string {
 	return sh.Protocol + path.Join(sh.Host, sh.Dir)
 }
 
+// UpdatePrompt updates the command line prompt.
 func (sh *Shell) UpdatePrompt() {
 	sh.PrefixMatcher.Reset()
 	sh.rl.SetPrompt("\033[36m" + sh.DirWithProtocol() + ">\033[0m ")
 }
 
+// Close closes the shell.
 func (sh *Shell) Close() error {
 	return sh.rl.Close()
 }
 
+// Run runs the shell.
 func (sh *Shell) Run() error {
 	sh.rl.CaptureExitSignal()
 	log.SetOutput(sh.Stderr)
@@ -170,6 +129,7 @@ func (sh *Shell) Run() error {
 	return nil
 }
 
+// Usage prints the usage to the specified writer..
 func (sh *Shell) Usage(w io.Writer) {
 	w.Write([]byte("Commands:\n"))
 	for _, name := range SortedCommandNames() {
@@ -179,11 +139,12 @@ func (sh *Shell) Usage(w io.Writer) {
 	}
 }
 
-func (sh *Shell) SubFS(name string) (wfs.WriteFileFS, string, error) {
-	if IsCurrentPath(name) {
-		return sh.FS, path.Join(sh.Dir, name), nil
+// SubFS returns the FS and related path. If the dirUrl has protocol then this creates a new FS.
+func (sh *Shell) SubFS(dirUrl string) (FS, string, error) {
+	if IsCurrentPath(dirUrl) {
+		return sh.FS, path.Join(sh.Dir, dirUrl), nil
 	}
-	fsys, _, _, dir, err := NewFS(name)
+	fsys, _, _, dir, err := NewFS(dirUrl)
 	if err != nil {
 		return nil, "", err
 	}

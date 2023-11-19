@@ -75,7 +75,7 @@ func (c *rm) Exec(sh *fssh.Shell) error {
 	return nil
 }
 
-func (c *rm) AutoCompleter() fssh.AutoCompleter {
+func (c *rm) AutoCompleter() fssh.AutoCompleterFunc {
 	return c.autoComplete
 }
 

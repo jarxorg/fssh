@@ -2,6 +2,7 @@ package fssh
 
 import (
 	"fmt"
+	"math"
 	"net/url"
 	"path"
 	"strings"
@@ -9,16 +10,19 @@ import (
 	gobsargs "github.com/gobs/args"
 )
 
+// IsCurrentPath checks the specified name has ":/"
 func IsCurrentPath(name string) bool {
 	return !strings.Contains(name, ":/")
 }
 
+// ParseArgs parses the specified line to args.
 func ParseArgs(line string) []string {
 	return gobsargs.GetArgs(line)
 }
 
-func parseDir(name string) (protocol, host, dir string, err error) {
-	u, e := url.Parse(name)
+// ParseDirURL parses the specified dirname to protocol, host, dir.
+func ParseDirURL(dirUrl string) (protocol, host, dir string, err error) {
+	u, e := url.Parse(dirUrl)
 	if e != nil {
 		err = e
 		return
@@ -29,11 +33,11 @@ func parseDir(name string) (protocol, host, dir string, err error) {
 		host = u.Host
 		dir = path.Clean(strings.TrimLeft(u.Path, "/"))
 	case "file":
-		host = "."
-		dir = path.Clean(u.Path)
+		host = u.Host
+		dir = path.Clean(strings.TrimLeft(u.Path, "/"))
 	default:
 		host = "."
-		dir = path.Clean(name)
+		dir = path.Clean(dirUrl)
 	}
 	return
 }
@@ -46,50 +50,55 @@ const (
 	unitPb = 1024 * 1024 * 1024 * 1024 * 1024
 )
 
+// DisplaySize returns summary of size.
 func DisplaySize(size int64) string {
 	if size < unitKb {
 		return fmt.Sprintf("%4dB", size)
 	}
 	if size < unitMb {
-		return fmt.Sprintf("%4dK", size/unitKb)
+		return fmt.Sprintf("%4dK", int64(math.Round(float64(size)/float64(unitKb))))
 	}
 	if size < unitGb {
-		return fmt.Sprintf("%4dM", size/unitMb)
+		return fmt.Sprintf("%4dM", int64(math.Round(float64(size)/float64(unitMb))))
 	}
 	if size < unitTb {
-		return fmt.Sprintf("%4dG", size/unitGb)
+		return fmt.Sprintf("%4dG", int64(math.Round(float64(size)/float64(unitGb))))
 	}
 	if size < unitPb {
-		return fmt.Sprintf("%4dT", size/unitTb)
+		return fmt.Sprintf("%4dT", int64(math.Round(float64(size)/float64(unitTb))))
 	}
-	return fmt.Sprintf("%4dP", size/unitPb)
+	return fmt.Sprintf("%4dP", int64(math.Round(float64(size)/float64(unitPb))))
 }
 
-func IsPattern(pattern string) bool {
+// IsGlobPattern checks pattern contains glob pattern.
+func IsGlobPattern(pattern string) bool {
 	return strings.ContainsAny(pattern, "*?[]")
 }
 
-func WithPrefixes(items []string, prefix, joiner string) []string {
+// WithPrefixes set prefix to each items.
+func WithPrefixes(items []string, prefix string) []string {
 	if prefix != "" {
 		for i, item := range items {
-			items[i] = prefix + joiner + item
+			items[i] = prefix + item
 		}
 		return items
 	}
 	return items
 }
 
-func WithSuffixes(items []string, joiner, suffix string) []string {
+// WithSuffixes set suffix to each items.
+func WithSuffixes(items []string, suffix string) []string {
 	if suffix != "" {
 		for i, item := range items {
-			items[i] = item + joiner + suffix
+			items[i] = item + suffix
 		}
 		return items
 	}
 	return items
 }
 
-func ArrayClone[T comparable](src []T) []T {
+// SliceClone clones a slice.
+func SliceClone[T comparable](src []T) []T {
 	dest := make([]T, len(src))
 	copy(dest, src)
 	return dest

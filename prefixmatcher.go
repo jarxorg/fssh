@@ -5,15 +5,17 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-
-	"github.com/jarxorg/wfs"
-	"golang.org/x/exp/slices"
 )
 
+// PrefixMatcher provides a functions to match prefix.
 type PrefixMatcher interface {
+	// Matches returns files and directories that match the prefix.
 	Matches(sh *Shell, prefix string) ([]string, error)
+	// Matches returns files that match the prefix.
 	MatchFiles(sh *Shell, prefix string) ([]string, error)
+	// Matches returns directories that match the prefix.
 	MatchDirs(sh *Shell, prefix string) ([]string, error)
+	// Reset is called when the shell status was updated.
 	Reset()
 }
 
@@ -29,19 +31,23 @@ type GlobPrefixMatcher struct {
 
 var _ PrefixMatcher = (*GlobPrefixMatcher)(nil)
 
+// Reset clears internal cache.
 func (m *GlobPrefixMatcher) Reset() {
 	m.cachePrefix = ""
 	m.cachePrefixMatches = nil
 }
 
+// Matches returns files and directories that match the prefix.
 func (m *GlobPrefixMatcher) Matches(sh *Shell, prefix string) ([]string, error) {
 	return m.matches(sh, prefix, flgGlobPrefixFiles|flgGlobPrefixDirs)
 }
 
+// Matches returns files that match the prefix.
 func (m *GlobPrefixMatcher) MatchFiles(sh *Shell, prefix string) ([]string, error) {
 	return m.matches(sh, prefix, flgGlobPrefixFiles)
 }
 
+// Matches returns directories that match the prefix.
 func (m *GlobPrefixMatcher) MatchDirs(sh *Shell, prefix string) ([]string, error) {
 	return m.matches(sh, prefix, flgGlobPrefixDirs)
 }
@@ -49,7 +55,7 @@ func (m *GlobPrefixMatcher) MatchDirs(sh *Shell, prefix string) ([]string, error
 func (m *GlobPrefixMatcher) matches(sh *Shell, prefix string, flgs int) ([]string, error) {
 	if m.cachePrefix != "" {
 		if prefix == m.cachePrefix {
-			return slices.Clone(m.cachePrefixMatches), nil
+			return SliceClone(m.cachePrefixMatches), nil
 		}
 		if strings.HasPrefix(prefix, m.cachePrefix) {
 			var newMatches []string
@@ -60,7 +66,7 @@ func (m *GlobPrefixMatcher) matches(sh *Shell, prefix string, flgs int) ([]strin
 			}
 			m.cachePrefix = prefix
 			m.cachePrefixMatches = newMatches
-			return slices.Clone(newMatches), nil
+			return SliceClone(newMatches), nil
 		}
 	}
 	fsys, pattern, err := m.prefixSubFS(sh, prefix)
@@ -100,7 +106,7 @@ func (m *GlobPrefixMatcher) matches(sh *Shell, prefix string, flgs int) ([]strin
 	return m.normalizeMatches(sh, prefix, dirs)
 }
 
-func (m *GlobPrefixMatcher) prefixSubFS(sh *Shell, prefix string) (wfs.WriteFileFS, string, error) {
+func (m *GlobPrefixMatcher) prefixSubFS(sh *Shell, prefix string) (FS, string, error) {
 	if IsCurrentPath(prefix) {
 		if prefix == "" || prefix == "." || prefix == "./" {
 			return sh.FS, path.Join(sh.Dir, "./*"), nil
@@ -129,5 +135,5 @@ func (m *GlobPrefixMatcher) normalizeMatches(sh *Shell, prefix string, matches [
 	}
 	m.cachePrefix = prefix
 	m.cachePrefixMatches = matches
-	return slices.Clone(matches), nil
+	return SliceClone(matches), nil
 }

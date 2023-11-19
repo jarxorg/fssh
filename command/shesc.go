@@ -64,7 +64,7 @@ func (c *shEsc) Exec(sh *fssh.Shell) error {
 	return nil
 }
 
-func (c *shEsc) AutoCompleter() fssh.AutoCompleter {
+func (c *shEsc) AutoCompleter() fssh.AutoCompleterFunc {
 	return nil
 }
 
