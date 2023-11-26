@@ -51,6 +51,12 @@ func TestParseArgs(t *testing.T) {
 }
 
 func TestParseDirURL(t *testing.T) {
+	osUserHomeDirOrg := osUserHomeDir
+	defer func() { osUserHomeDir = osUserHomeDirOrg }()
+	osUserHomeDir = func() (string, error) {
+		return "/home", nil
+	}
+
 	tests := []struct {
 		dirUrl       string
 		wantProtocol string
@@ -81,6 +87,16 @@ func TestParseDirURL(t *testing.T) {
 		}, {
 			dirUrl: ":",
 			errstr: `parse ":": missing protocol scheme`,
+		}, {
+			dirUrl:       "~~/current",
+			wantProtocol: "",
+			wantHost:     ".",
+			wantDir:      "current",
+		}, {
+			dirUrl:       "~/Downloads",
+			wantProtocol: "",
+			wantHost:     "/home",
+			wantDir:      "Downloads",
 		},
 	}
 	for i, test := range tests {

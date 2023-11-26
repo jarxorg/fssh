@@ -4,15 +4,21 @@ import (
 	"fmt"
 	"math"
 	"net/url"
+	"os"
 	"path"
 	"strings"
 
 	gobsargs "github.com/gobs/args"
 )
 
+// osUserHomeDir is a simple function that calls os.UserHomeDir for unit tests.
+var osUserHomeDir = func() (string, error) {
+	return os.UserHomeDir()
+}
+
 // IsCurrentPath checks the specified name has ":/"
 func IsCurrentPath(name string) bool {
-	return !strings.Contains(name, ":/")
+	return !strings.HasPrefix(name, "~") && !strings.Contains(name, ":/")
 }
 
 // ParseArgs parses the specified line to args.
@@ -21,7 +27,24 @@ func ParseArgs(line string) []string {
 }
 
 // ParseDirURL parses the specified dirname to protocol, host, dir.
+// If dirUrl starts with ~~ it is replaced with the local current directory.
+// If dirUrl starts with ~, it is replaced with the local home directory.
 func ParseDirURL(dirUrl string) (protocol, host, dir string, err error) {
+	if strings.HasPrefix(dirUrl, "~") {
+		if strings.HasPrefix(dirUrl[1:], "~") {
+			host = "."
+			dir = path.Clean(strings.TrimLeft(dirUrl[2:], "/"))
+			return
+		}
+		homeDir, e := osUserHomeDir()
+		if e != nil {
+			err = e
+			return
+		}
+		host = homeDir
+		dir = path.Clean(strings.TrimLeft(dirUrl[1:], "/"))
+		return
+	}
 	u, e := url.Parse(dirUrl)
 	if e != nil {
 		err = e
@@ -37,7 +60,7 @@ func ParseDirURL(dirUrl string) (protocol, host, dir string, err error) {
 		dir = path.Clean(strings.TrimLeft(u.Path, "/"))
 	default:
 		host = "."
-		dir = path.Clean(dirUrl)
+		dir = path.Clean(strings.TrimLeft(dirUrl, "/"))
 	}
 	return
 }
