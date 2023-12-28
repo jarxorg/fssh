@@ -50,6 +50,20 @@ func (c *ls) Exec(sh *fssh.Shell) error {
 	if err != nil {
 		return err
 	}
+	if fssh.IsGlobPattern(subName) {
+		matches, err := fs.Glob(subFs, subName)
+		if err != nil {
+			return err
+		}
+		for _, match := range matches {
+			info, err := fs.Stat(subFs, match)
+			if err != nil {
+				return err
+			}
+			c.printInfo(sh, info)
+		}
+		return nil
+	}
 	info, err := fs.Stat(subFs, subName)
 	if err != nil {
 		return err
