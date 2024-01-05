@@ -29,11 +29,11 @@ type Command interface {
 	Reset()
 }
 
-// NewCommandFunc represents a function to create a new command.
-type NewCommandFunc func() Command
-
 // AutoCompleterFunc represent a function for auto completion.
 type AutoCompleterFunc func(sh *Shell, arg string) ([]string, error)
+
+// NewCommandFunc represents a function to create a new command.
+type NewCommandFunc func() Command
 
 var (
 	commandPools       = map[string]*sync.Pool{}
@@ -49,6 +49,20 @@ func RegisterNewCommandFunc(fn NewCommandFunc) {
 	}
 	commandNames = append(commandNames, cmd.Name())
 	commandNamesSorted = false
+}
+
+// DeregisterNewCommandFunc deregisters a named NewCommandFunc.
+func DeregisterNewCommandFunc(name string) {
+	delete(commandPools, name)
+	for i, nm := range commandNames {
+		if nm == name {
+			for j := i + 1; j < len(commandNames); j++ {
+				commandNames[i] = commandNames[j]
+			}
+			commandNames = commandNames[:len(commandNames)-1]
+			break
+		}
+	}
 }
 
 // AquireCommand returns an Command instance from command pool.
@@ -97,25 +111,34 @@ func newReadlinePrefixCompleter(sh *Shell, name string) readline.PrefixCompleter
 		cmd := AquireCommand(name)
 		defer ReleaseCommand(cmd)
 
-		args := ParseArgs(line)[1:]
-		if err := cmd.FlagSet().Parse(args); err != nil {
-			return nil
-		}
-		fargs := cmd.FlagSet().Args()
-		lastFarg := ""
-		if len(fargs) > 0 {
-			lastFarg = fargs[len(fargs)-1]
-		}
-		matches, err := ac(sh, lastFarg)
-		if err != nil {
-			fmt.Fprintf(sh.Stderr, "%s: failed to auto complete: %v\n", ShellName, err)
-			return nil
-		}
-		prefix := strings.TrimSpace(line[len(cmd.Name()):])
-		if len(fargs) > 0 {
-			prefix = strings.TrimSpace(strings.TrimSuffix(prefix, lastFarg))
-		}
-		return WithPrefixes(matches, prefix+" ")
+		return autoComplete(sh, cmd, line)
 	}))
 	return pc
+}
+
+func autoComplete(sh *Shell, cmd Command, line string) []string {
+	ac := cmd.AutoCompleter()
+	args := ParseArgs(line)[1:]
+	if err := cmd.FlagSet().Parse(args); err != nil {
+		fmt.Fprintf(sh.Stderr, "%s: failed to parse flags: %v\n", ShellName, err)
+		return nil
+	}
+	fargs := cmd.FlagSet().Args()
+	lastFarg := ""
+	if len(fargs) > 0 {
+		lastFarg = fargs[len(fargs)-1]
+	}
+	matches, err := ac(sh, lastFarg)
+	if err != nil {
+		fmt.Fprintf(sh.Stderr, "%s: failed to auto complete: %v\n", ShellName, err)
+		return nil
+	}
+	prefix := strings.TrimSpace(line[len(cmd.Name()):])
+	if len(fargs) > 0 {
+		prefix = strings.TrimSpace(strings.TrimSuffix(prefix, lastFarg))
+	}
+	if prefix != "" {
+		prefix = prefix + " "
+	}
+	return WithPrefixes(matches, prefix)
 }

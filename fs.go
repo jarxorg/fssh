@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 
 	"github.com/jarxorg/gcsfs"
 	"github.com/jarxorg/s3fs"
@@ -45,7 +46,7 @@ func newFS(dirUrl string) (fsys FS, protocol string, host string, dir string, er
 		fsys = gcsfs.New(host)
 	case "mem://":
 		fsys = memfs.New()
-		err = fsys.MkdirAll(".", os.ModePerm)
+		err = fsys.MkdirAll(path.Join(host, dir), os.ModePerm)
 	default:
 		fsys = osfs.New(host)
 	}

@@ -104,7 +104,6 @@ func WithPrefixes(items []string, prefix string) []string {
 		for i, item := range items {
 			items[i] = prefix + item
 		}
-		return items
 	}
 	return items
 }

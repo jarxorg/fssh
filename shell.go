@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"path"
 	"path/filepath"
 
@@ -35,7 +34,7 @@ type Shell struct {
 
 // NewShell creates a new Shell.
 func NewShell(dirUrl string) (*Shell, error) {
-	homeDir, err := os.UserHomeDir()
+	homeDir, err := osUserHomeDir()
 	if err != nil {
 		return nil, err
 	}
@@ -99,34 +98,35 @@ func (sh *Shell) Run() error {
 		} else if err == io.EOF {
 			break
 		}
-		args := ParseArgs(line)
-		if len(args) == 0 {
-			continue
-		}
-		cmd := AquireCommand(args[0])
-		if cmd == nil {
-			fmt.Fprintf(sh.Stderr, "%s: command not found: %s\n", ShellName, args[0])
-			continue
-		}
-		if err := func() error {
-			defer ReleaseCommand(cmd)
-
-			if err := cmd.FlagSet().Parse(args[1:]); err != nil {
-				if err == flag.ErrHelp {
-					cmd.Usage(sh.Stdout)
-					return nil
-				}
-				return err
-			}
-			return cmd.Exec(sh)
-		}(); err != nil {
+		if err := sh.ExecCommand(ParseArgs(line)); err != nil {
 			if errors.Is(err, ErrExit) {
 				return nil
 			}
-			fmt.Fprintf(sh.Stderr, "%s: error: %v\n", ShellName, err)
+			fmt.Fprintf(sh.Stderr, "%s: %v\n", ShellName, err)
 		}
 	}
 	return nil
+}
+
+// ExecCommand executes a command.
+func (sh *Shell) ExecCommand(args []string) error {
+	if len(args) == 0 {
+		return nil
+	}
+	cmd := AquireCommand(args[0])
+	if cmd == nil {
+		return fmt.Errorf("command not found: %s", args[0])
+	}
+	defer ReleaseCommand(cmd)
+
+	if err := cmd.FlagSet().Parse(args[1:]); err != nil {
+		if err == flag.ErrHelp {
+			cmd.Usage(sh.Stdout)
+			return nil
+		}
+		return err
+	}
+	return cmd.Exec(sh)
 }
 
 // Usage prints the usage to the specified writer..
