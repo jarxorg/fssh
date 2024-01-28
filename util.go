@@ -26,14 +26,14 @@ func ParseArgs(line string) []string {
 	return gobsargs.GetArgs(line)
 }
 
-// ParseDirURL parses the specified dirname to protocol, host, dir.
-// If dirUrl starts with ~~ it is replaced with the local current directory.
-// If dirUrl starts with ~, it is replaced with the local home directory.
-func ParseDirURL(dirUrl string) (protocol, host, dir string, err error) {
-	if strings.HasPrefix(dirUrl, "~") {
-		if strings.HasPrefix(dirUrl[1:], "~") {
+// ParseURI parses the specified uri to protocol, host, filename.
+// If the uri starts with ~~ it is replaced with the local current filename.
+// If the uri starts with ~, it is replaced with the local home filename.
+func ParseURI(uri string) (protocol, host, filename string, err error) {
+	if strings.HasPrefix(uri, "~") {
+		if strings.HasPrefix(uri[1:], "~") {
 			host = "."
-			dir = path.Clean(strings.TrimLeft(dirUrl[2:], "/"))
+			filename = path.Clean(strings.TrimLeft(uri[2:], "/"))
 			return
 		}
 		homeDir, e := osUserHomeDir()
@@ -42,10 +42,10 @@ func ParseDirURL(dirUrl string) (protocol, host, dir string, err error) {
 			return
 		}
 		host = homeDir
-		dir = path.Clean(strings.TrimLeft(dirUrl[1:], "/"))
+		filename = path.Clean(strings.TrimLeft(uri[1:], "/"))
 		return
 	}
-	u, e := url.Parse(dirUrl)
+	u, e := url.Parse(uri)
 	if e != nil {
 		err = e
 		return
@@ -54,13 +54,13 @@ func ParseDirURL(dirUrl string) (protocol, host, dir string, err error) {
 	case "s3", "gs", "mem":
 		protocol = u.Scheme + "://"
 		host = u.Host
-		dir = path.Clean(strings.TrimLeft(u.Path, "/"))
+		filename = path.Clean(strings.TrimLeft(u.Path, "/"))
 	case "file":
 		host = u.Host
-		dir = path.Clean(strings.TrimLeft(u.Path, "/"))
+		filename = path.Clean(strings.TrimLeft(u.Path, "/"))
 	default:
 		host = "."
-		dir = path.Clean(strings.TrimLeft(dirUrl, "/"))
+		filename = path.Clean(strings.TrimLeft(uri, "/"))
 	}
 	return
 }

@@ -50,7 +50,7 @@ func TestParseArgs(t *testing.T) {
 	}
 }
 
-func TestParseDirURL(t *testing.T) {
+func TestParseURI(t *testing.T) {
 	osUserHomeDirOrg := osUserHomeDir
 	defer func() { osUserHomeDir = osUserHomeDirOrg }()
 	osUserHomeDir = func() (string, error) {
@@ -61,29 +61,29 @@ func TestParseDirURL(t *testing.T) {
 		dirUrl       string
 		wantProtocol string
 		wantHost     string
-		wantDir      string
+		wantFilename string
 		errstr       string
 	}{
 		{
 			dirUrl:       "",
 			wantProtocol: "",
 			wantHost:     ".",
-			wantDir:      ".",
+			wantFilename: ".",
 		}, {
 			dirUrl:       "dir",
 			wantProtocol: "",
 			wantHost:     ".",
-			wantDir:      "dir",
+			wantFilename: "dir",
 		}, {
 			dirUrl:       "file://dir1/dir2",
 			wantProtocol: "",
 			wantHost:     "dir1",
-			wantDir:      "dir2",
+			wantFilename: "dir2",
 		}, {
 			dirUrl:       "s3://BUCKET/DIR",
 			wantProtocol: "s3://",
 			wantHost:     "BUCKET",
-			wantDir:      "DIR",
+			wantFilename: "DIR",
 		}, {
 			dirUrl: ":",
 			errstr: `parse ":": missing protocol scheme`,
@@ -91,16 +91,16 @@ func TestParseDirURL(t *testing.T) {
 			dirUrl:       "~~/current",
 			wantProtocol: "",
 			wantHost:     ".",
-			wantDir:      "current",
+			wantFilename: "current",
 		}, {
 			dirUrl:       "~/Downloads",
 			wantProtocol: "",
 			wantHost:     "/home",
-			wantDir:      "Downloads",
+			wantFilename: "Downloads",
 		},
 	}
 	for i, test := range tests {
-		gotProtocol, gotHost, gotDir, err := ParseDirURL(test.dirUrl)
+		gotProtocol, gotHost, gotFilename, err := ParseURI(test.dirUrl)
 		if test.errstr != "" {
 			if err == nil {
 				t.Fatalf("tests[%d]: no error; want %s", i, test.errstr)
@@ -120,8 +120,8 @@ func TestParseDirURL(t *testing.T) {
 		if gotHost != test.wantHost {
 			t.Errorf("tests[%d]: got host %v; want %v", i, gotHost, test.wantHost)
 		}
-		if gotDir != test.wantDir {
-			t.Errorf("tests[%d]: got dir %v; want %v", i, gotDir, test.wantDir)
+		if gotFilename != test.wantFilename {
+			t.Errorf("tests[%d]: got dir %v; want %v", i, gotFilename, test.wantFilename)
 		}
 	}
 }
