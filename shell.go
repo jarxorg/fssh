@@ -140,11 +140,23 @@ func (sh *Shell) Usage(w io.Writer) {
 }
 
 // SubFS returns the FS and related path. If the dirUrl has protocol then this creates a new FS.
-func (sh *Shell) SubFS(dirUrl string) (FS, string, error) {
+func (sh *Shell) SubFS(filenameUrl string) (FS, string, error) {
+	if IsCurrentPath(filenameUrl) {
+		return sh.FS, path.Join(sh.Dir, filenameUrl), nil
+	}
+	fsys, _, _, filename, err := NewFS(filenameUrl)
+	if err != nil {
+		return nil, "", err
+	}
+	return fsys, filename, nil
+}
+
+// SubFS returns the FS and related path. If the dirUrl has protocol then this creates a new FS.
+func (sh *Shell) SubDirFS(dirUrl string) (FS, string, error) {
 	if IsCurrentPath(dirUrl) {
 		return sh.FS, path.Join(sh.Dir, dirUrl), nil
 	}
-	fsys, _, _, dir, err := NewFS(dirUrl)
+	fsys, _, _, dir, err := NewDirFS(dirUrl)
 	if err != nil {
 		return nil, "", err
 	}
