@@ -60,7 +60,7 @@ func (c *cp) Exec(sh *fssh.Shell) error {
 	if err != nil {
 		return err
 	}
-	toFS, toName, err := sh.SubFS(to)
+	toFS, toName, err := sh.SubDirFS(to)
 	if err != nil {
 		if os.IsNotExist(err) {
 			toFS, toName, err = sh.SubFS(path.Dir(to))
@@ -125,10 +125,11 @@ func (c *cp) copyFile(sh *fssh.Shell, fromFS, toFS fssh.FS, fromName, toName str
 		return err
 	}
 	toInfo, err := fs.Stat(toFS, toName)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	if toInfo != nil {
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+	} else {
 		if toInfo.IsDir() {
 			toName = path.Join(toName, path.Base(fromName))
 		} else if !c.isForce {

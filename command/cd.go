@@ -47,13 +47,13 @@ func (c *cd) Exec(sh *fssh.Shell) error {
 	}
 	dir := args[0]
 	if !fssh.IsCurrentPath(dir) {
-		fsys, protocol, baseDir, subDir, err := fssh.NewFS(dir)
+		fsys, protocol, host, subDir, err := fssh.NewDirFS(dir)
 		if err != nil {
 			return err
 		}
 		sh.FS = fsys
 		sh.Protocol = protocol
-		sh.Host = baseDir
+		sh.Host = host
 		sh.Dir = subDir
 		sh.UpdatePrompt()
 		return nil

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"path"
 
 	"github.com/jarxorg/fssh"
 )
@@ -44,8 +43,11 @@ func (c *cat) Exec(sh *fssh.Shell) error {
 		c.Usage(sh.Stderr)
 		return nil
 	}
-	filename := path.Join(sh.Dir, args[0])
-	bin, err := fs.ReadFile(sh.FS, filename)
+	fsys, name, err := sh.SubFS(args[0])
+	if err != nil {
+		return err
+	}
+	bin, err := fs.ReadFile(fsys, name)
 	if err != nil {
 		return err
 	}
