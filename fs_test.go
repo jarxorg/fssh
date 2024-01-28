@@ -12,7 +12,7 @@ import (
 
 func TestNewFS(t *testing.T) {
 	tests := []struct {
-		dirUrl       string
+		nameUrl      string
 		wantType     reflect.Type
 		wantProtocol string
 		wantHost     string
@@ -20,24 +20,48 @@ func TestNewFS(t *testing.T) {
 		errstr       string
 	}{
 		{
-			dirUrl:       "",
+			nameUrl:      "",
 			wantType:     reflect.TypeOf(osfs.New("")),
 			wantProtocol: "",
 			wantHost:     ".",
 			wantDir:      ".",
 		}, {
-			dirUrl: ":",
-			errstr: `parse ":": missing protocol scheme`,
+			nameUrl:      "dir",
+			wantType:     reflect.TypeOf(osfs.New("")),
+			wantProtocol: "",
+			wantHost:     ".",
+			wantDir:      "dir",
 		}, {
-			dirUrl: "not-found",
-			errstr: "stat not-found: no such file or directory",
+			nameUrl:      "file://dir1/dir2",
+			wantType:     reflect.TypeOf(osfs.New("")),
+			wantProtocol: "",
+			wantHost:     "dir1",
+			wantDir:      "dir2",
 		}, {
-			dirUrl: "fs_test.go",
-			errstr: "not directory: fs_test.go",
+			nameUrl:      "mem://",
+			wantType:     reflect.TypeOf(memfs.New()),
+			wantProtocol: "mem://",
+			wantHost:     "",
+			wantDir:      ".",
+		}, {
+			nameUrl:      "s3://BUCKET/DIR",
+			wantType:     reflect.TypeOf(s3fs.New("")),
+			wantProtocol: "s3://",
+			wantHost:     "BUCKET",
+			wantDir:      "DIR",
+		}, {
+			nameUrl:      "gs://BUCKET/DIR",
+			wantType:     reflect.TypeOf(gcsfs.New("")),
+			wantProtocol: "gs://",
+			wantHost:     "BUCKET",
+			wantDir:      "DIR",
+		}, {
+			nameUrl: ":",
+			errstr:  `parse ":": missing protocol scheme`,
 		},
 	}
 	for i, test := range tests {
-		gotFS, gotProtocol, gotHost, gotDir, err := NewFS(test.dirUrl)
+		gotFS, gotProtocol, gotHost, gotDir, err := NewFS(test.nameUrl)
 		if test.errstr != "" {
 			if err == nil {
 				t.Fatalf("tests[%d]: no error; want %s", i, test.errstr)
@@ -67,7 +91,7 @@ func TestNewFS(t *testing.T) {
 	}
 }
 
-func Test_newFS(t *testing.T) {
+func TestNewDirFS(t *testing.T) {
 	tests := []struct {
 		dirUrl       string
 		wantType     reflect.Type
@@ -83,42 +107,18 @@ func Test_newFS(t *testing.T) {
 			wantHost:     ".",
 			wantDir:      ".",
 		}, {
-			dirUrl:       "dir",
-			wantType:     reflect.TypeOf(osfs.New("")),
-			wantProtocol: "",
-			wantHost:     ".",
-			wantDir:      "dir",
-		}, {
-			dirUrl:       "file://dir1/dir2",
-			wantType:     reflect.TypeOf(osfs.New("")),
-			wantProtocol: "",
-			wantHost:     "dir1",
-			wantDir:      "dir2",
-		}, {
-			dirUrl:       "mem://",
-			wantType:     reflect.TypeOf(memfs.New()),
-			wantProtocol: "mem://",
-			wantHost:     "",
-			wantDir:      ".",
-		}, {
-			dirUrl:       "s3://BUCKET/DIR",
-			wantType:     reflect.TypeOf(s3fs.New("")),
-			wantProtocol: "s3://",
-			wantHost:     "BUCKET",
-			wantDir:      "DIR",
-		}, {
-			dirUrl:       "gs://BUCKET/DIR",
-			wantType:     reflect.TypeOf(gcsfs.New("")),
-			wantProtocol: "gs://",
-			wantHost:     "BUCKET",
-			wantDir:      "DIR",
-		}, {
 			dirUrl: ":",
 			errstr: `parse ":": missing protocol scheme`,
+		}, {
+			dirUrl: "not-found",
+			errstr: "stat not-found: no such file or directory",
+		}, {
+			dirUrl: "fs_test.go",
+			errstr: "not directory: fs_test.go",
 		},
 	}
 	for i, test := range tests {
-		gotFS, gotProtocol, gotHost, gotDir, err := newFS(test.dirUrl)
+		gotFS, gotProtocol, gotHost, gotDir, err := NewDirFS(test.dirUrl)
 		if test.errstr != "" {
 			if err == nil {
 				t.Fatalf("tests[%d]: no error; want %s", i, test.errstr)

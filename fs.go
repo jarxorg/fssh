@@ -16,9 +16,29 @@ import (
 // FS is writable FS.
 type FS wfs.WriteFileFS
 
-// NewFS parses dirUrl and creates a new FS according to the protocol.
-func NewFS(dirUrl string) (fsys FS, protocol string, host string, dir string, err error) {
-	fsys, protocol, host, dir, err = newFS(dirUrl)
+// NewFS parses nameUrl and creates a new FS according to the protocol.
+func NewFS(filenameUrl string) (fsys FS, protocol string, host string, filename string, err error) {
+	protocol, host, filename, err = ParseURI(filenameUrl)
+	if err != nil {
+		return
+	}
+	switch protocol {
+	case "s3://":
+		fsys = s3fs.New(host)
+	case "gs://":
+		fsys = gcsfs.New(host)
+	case "mem://":
+		fsys = memfs.New()
+		err = fsys.MkdirAll(path.Join(host, filename), os.ModePerm)
+	default:
+		fsys = osfs.New(host)
+	}
+	return
+}
+
+// NewDirFS parses dirUrl and creates a new FS according to the protocol.
+func NewDirFS(dirUrl string) (fsys FS, protocol string, host string, dir string, err error) {
+	fsys, protocol, host, dir, err = NewFS(dirUrl)
 	if err != nil {
 		return
 	}
@@ -30,25 +50,6 @@ func NewFS(dirUrl string) (fsys FS, protocol string, host string, dir string, er
 	if !info.IsDir() {
 		err = fmt.Errorf("not directory: %s", dir)
 		return
-	}
-	return
-}
-
-func newFS(dirUrl string) (fsys FS, protocol string, host string, dir string, err error) {
-	protocol, host, dir, err = ParseDirURL(dirUrl)
-	if err != nil {
-		return
-	}
-	switch protocol {
-	case "s3://":
-		fsys = s3fs.New(host)
-	case "gs://":
-		fsys = gcsfs.New(host)
-	case "mem://":
-		fsys = memfs.New()
-		err = fsys.MkdirAll(path.Join(host, dir), os.ModePerm)
-	default:
-		fsys = osfs.New(host)
 	}
 	return
 }
